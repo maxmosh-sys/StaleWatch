@@ -1,0 +1,29 @@
+{
+  "smtp_settings": {
+    "server": "smtp.office365.com",
+    "port": 587,
+    "sender_email": "alerts@yourcompany.com",
+    "use_tls": true,
+    "comments": "Ensure the sender email has SMTP permission."
+  },
+  "monitoring_tasks": [
+    {
+      "name": "Production Database Log",
+      "description": "Monitoring the main DB log file",
+      "path": "C:\\Logs\\db_export.log",
+      "type": "file",
+      "threshold_minutes": 30,
+      "alert_cooldown_minutes": 60,
+      "notifications": [
+        {
+          "type": "email",
+          "recipients": ["moshe.max@example.com"]
+        },
+        {
+          "type": "teams",
+          "webhook_url": "https://webhook.teams.office.com/webhookb2/..."
+        }
+      ]
+    }
+  ]
+}

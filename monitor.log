@@ -1,0 +1,22 @@
+2026-06-15 12:09:33,510 - WARNING - Task 'T' is stale! Sending alerts...
+2026-06-15 12:09:33,512 - INFO - Task 'T' activity detected (Size: 1 bytes). Resetting timer.
+2026-06-15 12:09:33,512 - ERROR - Error accessing 'T': Path does not exist: Z:\does\not\exist.txt
+2026-06-15 12:42:38,770 - WARNING - Task 'T' is stale! Sending alerts...
+2026-06-15 12:42:38,772 - INFO - Task 'T' activity detected (Size: 1 bytes). Resetting timer.
+2026-06-15 12:42:38,772 - ERROR - Error accessing 'T': Path does not exist: Z:\does\not\exist.txt
+2026-06-15 12:43:25,739 - WARNING - Task 'T' is stale! Sending alerts...
+2026-06-15 12:43:25,741 - INFO - Task 'T' activity detected (Size: 1 bytes). Resetting timer.
+2026-06-15 12:43:25,741 - ERROR - Error accessing 'T': Path does not exist: Z:\does\not\exist.txt
+2026-06-15 12:43:25,751 - ERROR - Could not read 'C:\Users\maxmo\AppData\Local\Temp\tmp3t895jhp\state.json' (Expecting property name enclosed in double quotes: line 1 column 3 (char 2)); starting from empty state.
+2026-06-15 12:43:49,612 - WARNING - Task 'T' is stale! Sending alerts...
+2026-06-15 12:43:49,614 - INFO - Task 'T' activity detected (Size: 1 bytes). Resetting timer.
+2026-06-15 12:43:49,614 - ERROR - Error accessing 'T': Path does not exist: Z:\does\not\exist.txt
+2026-06-15 12:43:49,619 - ERROR - Could not read 'C:\Users\maxmo\AppData\Local\Temp\tmpap_g1cz1\state.json' (Expecting property name enclosed in double quotes: line 1 column 3 (char 2)); starting from empty state.
+2026-06-15 12:46:58,879 - WARNING - Task 'T' is stale! Sending alerts...
+2026-06-15 12:46:58,881 - INFO - Task 'T' activity detected (Size: 1 bytes). Resetting timer.
+2026-06-15 12:46:58,881 - ERROR - Error accessing 'T': Path does not exist: Z:\does\not\exist.txt
+2026-06-15 12:46:58,886 - ERROR - Could not read 'C:\Users\maxmo\AppData\Local\Temp\tmpkt5r482m\state.json' (Expecting property name enclosed in double quotes: line 1 column 3 (char 2)); starting from empty state.
+2026-06-15 12:47:15,656 - WARNING - Task 'T' is stale! Sending alerts...
+2026-06-15 12:47:15,658 - INFO - Task 'T' activity detected (Size: 1 bytes). Resetting timer.
+2026-06-15 12:47:15,658 - ERROR - Error accessing 'T': Path does not exist: Z:\does\not\exist.txt
+2026-06-15 12:47:15,661 - ERROR - Could not read 'C:\Users\maxmo\AppData\Local\Temp\tmpq8ocj7xv\state.json' (Expecting property name enclosed in double quotes: line 1 column 3 (char 2)); starting from empty state.

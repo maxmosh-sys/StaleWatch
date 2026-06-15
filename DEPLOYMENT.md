@@ -1,0 +1,48 @@
+# StaleWatch Deployment Guide
+
+This guide provides step-by-step instructions for automating the **StaleWatch** monitoring tool using the Windows Task Scheduler.
+
+## Prerequisites
+1. Ensure `monitor.py`, `config.json`, and `state.json` are located in your project directory (e.g., `C:\Users\maxmo\Projects\StaleWatch`).
+2. Verify that `StaleWatch.bat` is configured correctly to point to your Python executable and project path.
+3. Ensure the `EMAIL_PASSWORD` environment variable is set in your system environment variables.
+
+## Step-by-Step Configuration
+
+### 1. Open Task Scheduler
+- Press `Win + R`, type `taskschd.msc`, and hit Enter.
+- In the right-hand panel, click **Create Task...**.
+
+### 2. General Tab
+- **Name**: `StaleWatch_Monitor`
+- **Security Options**:
+    - Select **Run whether user is logged on or not**.
+    - Check **Run with highest privileges**.
+
+### 3. Triggers Tab
+- Click **New...**.
+- **Begin the task**: On a schedule.
+- Select **Daily**.
+- Under **Advanced settings**:
+    - Check **Repeat task every:** and set it to **10 minutes**.
+    - Set **for a duration of:** to **Indefinitely**.
+
+### 4. Actions Tab
+- Click **New...**.
+- **Action**: Start a program.
+- **Program/script**: Browse and select `C:\Users\maxmo\Projects\StaleWatch\StaleWatch.bat`.
+- **Start in (optional)**: Paste the path to your project folder: `C:\Users\maxmo\Projects\StaleWatch\`
+    - *Note: This step is crucial for the script to correctly locate configuration files.*
+
+### 5. Settings Tab
+- **Stop the task if it runs longer than**: Set to `1 hour` to prevent zombie processes.
+- **If the task is already running, then the following rule applies**: Set to `Do not start a new instance`.
+
+### 6. Finalization
+- Click **OK**.
+- Enter your Windows account credentials when prompted to authorize the task to run in the background.
+
+## Verification
+1. Right-click the newly created task (`StaleWatch_Monitor`) in the Task Scheduler library.
+2. Click **Run**.
+3. Check the `monitor.log` file in your project folder to confirm the script executed successfully without errors.
