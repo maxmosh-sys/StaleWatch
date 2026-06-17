@@ -1,0 +1,29 @@
+{
+  "smtp_settings": {
+    "server": "smtp.gmail.com",
+    "port": 587,
+    "sender_email": "maxmosh@gmail.com",
+    "use_tls": true,
+    "comments": "Set EMAIL_PASSWORD to a Google App Password (not your normal Gmail password)."
+  },
+  "monitoring_tasks": [
+    {
+      "name": "Production Database Log",
+      "description": "Monitoring the main DB log file",
+      "path": "C:\\Logs\\db_export.log",
+      "type": "file",
+      "threshold_minutes": 30,
+      "alert_cooldown_minutes": 60,
+      "notifications": [
+        {
+          "type": "email",
+          "recipients": ["maxmosh@gmail.com"]
+        },
+        {
+          "type": "teams",
+          "webhook_url": "https://webhook.teams.office.com/webhookb2/..."
+        }
+      ]
+    }
+  ]
+}

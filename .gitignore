@@ -1,0 +1,6 @@
+# Runtime outputs (regenerated each run; not meaningful in version control)
+output_files/
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
