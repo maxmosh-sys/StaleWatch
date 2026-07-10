@@ -21,22 +21,21 @@ StaleWatch resolves all paths relative to `StaleWatch.py`'s own location, so it 
 ```
 StaleWatch.py
 StaleWatch.bat
-input_files/
-    config.json        # read
+StaleWatch.json        # read (config, next to StaleWatch.py)
 output_files/          # created automatically
     state.json         # read + written each run
     StaleWatch.log     # written (rotated daily)
 ```
 
 ## Setup Instructions
-1.  **Project Location:** Place `StaleWatch.py` and `StaleWatch.bat` in your project directory (e.g., `C:\Users\maxmo\Projects\StaleWatch`), with `config.json` inside an `input_files` subfolder. The `output_files` folder is created automatically on first run.
-2.  **Configuration:** Edit `input_files\config.json` to define your monitoring tasks, thresholds, and notification endpoints.
+1.  **Project Location:** Place `StaleWatch.py`, `StaleWatch.bat`, and `StaleWatch.json` in your project directory (e.g., `C:\Users\maxmo\Projects\StaleWatch`). The `output_files` folder is created automatically on first run.
+2.  **Configuration:** Edit `StaleWatch.json` to define your monitoring tasks, thresholds, and notification endpoints.
 3.  **Security:** For SMTP authentication, set the `EMAIL_PASSWORD` environment variable in your Windows system settings:
 ```cmd
     setx EMAIL_PASSWORD "your_password_here"
     ```
 
-## Configuration (`config.json`)
+## Configuration (`StaleWatch.json`)
 The configuration allows granular control over each monitored task:
 *   `threshold_minutes`: Time limit for inactivity before triggering an alert.
 *   `alert_cooldown_minutes`: Minimum delay before re-sending an alert for the same task.

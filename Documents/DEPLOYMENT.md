@@ -3,7 +3,7 @@
 This guide provides step-by-step instructions for automating the **StaleWatch** monitoring tool using the Windows Task Scheduler.
 
 ## Prerequisites
-1. Ensure `StaleWatch.py` and `StaleWatch.bat` are in your project directory (e.g., `C:\Users\maxmo\Projects\StaleWatch`), with `config.json` inside the `input_files` subfolder. (`output_files\state.json` and `output_files\StaleWatch.log` are created automatically.)
+1. Ensure `StaleWatch.py`, `StaleWatch.bat`, and `StaleWatch.json` are in your project directory (e.g., `C:\Users\maxmo\Projects\StaleWatch`). (`output_files\state.json` and `output_files\StaleWatch.log` are created automatically.)
 2. Verify that `python` is available on the system PATH (the batch file calls `python` directly).
 3. Ensure the `EMAIL_PASSWORD` environment variable is set in your system environment variables.
 

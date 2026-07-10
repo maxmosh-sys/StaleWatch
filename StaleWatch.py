@@ -10,10 +10,10 @@ from email.message import EmailMessage
 # All inputs and outputs are resolved relative to this script's own location,
 # so the tool works no matter what the current working directory is.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INPUT_DIR = os.path.join(BASE_DIR, "input_files")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output_files")
 
-CONFIG_PATH = os.path.join(INPUT_DIR, "config.json")
+# Config lives alongside StaleWatch.py as StaleWatch.json.
+CONFIG_PATH = os.path.join(BASE_DIR, "StaleWatch.json")
 STATE_PATH = os.path.join(OUTPUT_DIR, "state.json")
 LOG_PATH = os.path.join(OUTPUT_DIR, "StaleWatch.log")
 

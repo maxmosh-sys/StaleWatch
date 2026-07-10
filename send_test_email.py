@@ -1,4 +1,4 @@
-"""One-off: send a real StaleWatch test alert email using config.json + EMAIL_PASSWORD.
+"""One-off: send a real StaleWatch test alert email using StaleWatch.json + EMAIL_PASSWORD.
 
 Usage (PowerShell, in this session so the password isn't stored anywhere):
     ! $env:EMAIL_PASSWORD="your-google-app-password"; python send_test_email.py
