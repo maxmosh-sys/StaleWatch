@@ -1,7 +1,7 @@
 import os
-import sys
 import json
 import logging
+import argparse
 from logging.handlers import TimedRotatingFileHandler # הוסף את השורה הזו בתחילת הקובץ עם שאר ה-Imports
 import smtplib
 from datetime import datetime
@@ -10,26 +10,56 @@ from email.message import EmailMessage
 # All inputs and outputs are resolved relative to this script's own location,
 # so the tool works no matter what the current working directory is.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(BASE_DIR, "output_files")
+DEFAULT_OUTPUT_DIR = os.path.join(BASE_DIR, "output_files")
+
+# The environments StaleWatch is allowed to run against.
+VALID_ENVIRONMENTS = ["PRD", "PPR", "ITG", "QA1", "QA2", "QA3"]
 
 # Config lives alongside StaleWatch.py as StaleWatch.json.
 CONFIG_PATH = os.path.join(BASE_DIR, "StaleWatch.json")
-STATE_PATH = os.path.join(OUTPUT_DIR, "state.json")
-LOG_PATH = os.path.join(OUTPUT_DIR, "StaleWatch.log")
 
-# Outputs (log + state) live in output_files/, which must exist before logging starts.
-os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Configuration for logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        # יצירת קובץ חדש בכל חצות (midnight), שמירה של 30 ימים אחורה (backupCount)
-        TimedRotatingFileHandler(LOG_PATH, when="midnight", interval=1, backupCount=30, encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
+def parse_args(argv=None):
+    """Parse command-line arguments (-e environment, -f output folder)."""
+    parser = argparse.ArgumentParser(
+        description="StaleWatch: alert when monitored files/folders go stale."
+    )
+    parser.add_argument(
+        "-e", "--environment", required=True, choices=VALID_ENVIRONMENTS,
+        help="Target environment (one of: %(choices)s)." % {"choices": ", ".join(VALID_ENVIRONMENTS)},
+    )
+    parser.add_argument(
+        "-f", "--output-folder", default=DEFAULT_OUTPUT_DIR,
+        help="Folder for state.json and StaleWatch.log (default: %(default)s).",
+    )
+    parser.add_argument(
+        "--selftest", action="store_true",
+        help="Run a connectivity self-test before monitoring.",
+    )
+    return parser.parse_args(argv)
+
+
+def configure_logging(output_dir):
+    """Set up rotating file + console logging under the chosen output folder.
+
+    Returns (state_path, log_path) for that folder. The folder is created if
+    it does not exist, since it must be present before logging starts.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    state_path = os.path.join(output_dir, "state.json")
+    log_path = os.path.join(output_dir, "StaleWatch.log")
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            # יצירת קובץ חדש בכל חצות (midnight), שמירה של 30 ימים אחורה (backupCount)
+            TimedRotatingFileHandler(log_path, when="midnight", interval=1, backupCount=30, encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+    return state_path, log_path
+
 
 def load_config():
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
@@ -157,7 +187,7 @@ def run_selftest(config):
         test_teams_webhook(url)
 
 
-def load_state(path=STATE_PATH):
+def load_state(path=os.path.join(DEFAULT_OUTPUT_DIR, "state.json")):
     """Load persisted state, tolerating a missing or corrupted file."""
     if not os.path.exists(path):
         return {}
@@ -169,7 +199,7 @@ def load_state(path=STATE_PATH):
         return {}
 
 
-def save_state(state, path=STATE_PATH):
+def save_state(state, path=os.path.join(DEFAULT_OUTPUT_DIR, "state.json")):
     """Write state atomically so a crash mid-write can't corrupt the file."""
     tmp = path + '.tmp'
     with open(tmp, 'w') as f:
@@ -177,19 +207,23 @@ def save_state(state, path=STATE_PATH):
     os.replace(tmp, path)
 
 
-def main():
+def main(argv=None):
+    args = parse_args(argv)
+    state_path, _ = configure_logging(args.output_folder)
+
     try:
+        logging.info(f"StaleWatch starting in environment '{args.environment}'.")
         config = load_config()
 
-        if '--selftest' in sys.argv:
+        if args.selftest:
             run_selftest(config)
 
-        state = load_state()
+        state = load_state(state_path)
 
         for task in config.get('monitoring_tasks', []):
             process_task(task, state)
 
-        save_state(state)
+        save_state(state, state_path)
 
     except Exception as e:
         logging.critical(f"System failure: {e}")
