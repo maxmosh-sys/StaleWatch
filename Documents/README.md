@@ -43,7 +43,7 @@ The configuration allows granular control over each monitored task:
 
 ## Deployment
 Automate the execution using **Windows Task Scheduler**:
-1.  Set up a new task to run `StaleWatch.bat` every 10 minutes, passing the folder that contains `StaleWatch.py` and the environment as arguments (e.g., `StaleWatch.bat "C:\Users\maxmo\Projects\StaleWatch" PRD`). The environment must be one of `PRD PPR ITG QA1 QA2 QA3`.
+1.  Set up a new task to run `StaleWatch.bat` every 10 minutes, passing the environment (mandatory) and optionally an output folder (e.g., `StaleWatch.bat PRD` or `StaleWatch.bat PRD "D:\StaleWatch\out"`). The batch file runs `StaleWatch.py` from its own folder. The environment must be one of `PRD PPR ITG QA1 QA2 QA3`.
 2.  For full details, refer to the `DEPLOYMENT.md` file in this directory.
 
 ## Logging

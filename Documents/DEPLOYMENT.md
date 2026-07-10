@@ -31,8 +31,8 @@ This guide provides step-by-step instructions for automating the **StaleWatch** 
 - Click **New...**.
 - **Action**: Start a program.
 - **Program/script**: Browse and select `C:\Users\maxmo\Projects\StaleWatch\StaleWatch.bat`.
-- **Add arguments (optional)**: The folder that contains `StaleWatch.py` (quoted) followed by the environment: `"C:\Users\maxmo\Projects\StaleWatch" PRD`
-    - *Note: Both arguments are required. The first is passed to Python as the location of `StaleWatch.py` (inputs/outputs are resolved relative to that folder, so "Start in" is not needed). The second is the environment, one of `PRD PPR ITG QA1 QA2 QA3`, passed to Python as `-e`.*
+- **Add arguments**: The environment, and optionally an output folder: `PRD` (or e.g. `PRD "D:\StaleWatch\out"`).
+    - *Note: The batch file runs `StaleWatch.py` from its own folder, so no "Start in" is needed. The first argument (environment) is mandatory and must be one of `PRD PPR ITG QA1 QA2 QA3` (passed to Python as `-e`). The second argument (output folder for the log + state) is optional and passed as `-f`; it defaults to the `output_files` folder next to `StaleWatch.py`.*
 
 ### 5. Settings Tab
 - **Stop the task if it runs longer than**: Set to `1 hour` to prevent zombie processes.
