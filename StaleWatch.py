@@ -10,55 +10,107 @@ from email.message import EmailMessage
 # All inputs and outputs are resolved relative to this script's own location,
 # so the tool works no matter what the current working directory is.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_OUTPUT_DIR = os.path.join(BASE_DIR, "output_files")
-
-# The environments StaleWatch is allowed to run against.
-VALID_ENVIRONMENTS = ["PRD", "PPR", "ITG", "QA1", "QA2", "QA3"]
 
 # Config lives alongside StaleWatch.py as StaleWatch.json.
 CONFIG_PATH = os.path.join(BASE_DIR, "StaleWatch.json")
 
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+
 
 def parse_args(argv=None):
-    """Parse command-line arguments (-e environment, -f output folder)."""
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="StaleWatch: alert when monitored files/folders go stale."
-    )
-    parser.add_argument(
-        "-e", "--environment", required=True, choices=VALID_ENVIRONMENTS,
-        help="Target environment (one of: %(choices)s)." % {"choices": ", ".join(VALID_ENVIRONMENTS)},
-    )
-    parser.add_argument(
-        "-f", "--output-folder", default=DEFAULT_OUTPUT_DIR,
-        help="Folder for state.json and StaleWatch.log (default: %(default)s).",
+        prog="StaleWatch",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "StaleWatch - a staleness monitor for files and folders.\n"
+            "\n"
+            "PURPOSE:\n"
+            "  Some processes are supposed to keep updating a file or folder (a\n"
+            "  log that should keep growing, an export that should be refreshed,\n"
+            "  a data drop that should keep arriving). When they silently stop,\n"
+            "  nobody notices. StaleWatch watches those paths and raises an alert\n"
+            "  when one stops changing for too long.\n"
+            "\n"
+            "HOW IT WORKS:\n"
+            "  * Reads its configuration from StaleWatch.json (next to this\n"
+            "    script). Each entry under 'monitoring_tasks' describes one path\n"
+            "    to watch, how long it may stay unchanged (threshold_minutes),\n"
+            "    and how to alert (email and/or Microsoft Teams).\n"
+            "  * For every run it checks each path's last-modified time and size.\n"
+            "    If either changed since last time, the path is considered active\n"
+            "    and its timer resets. If nothing changed for longer than the\n"
+            "    threshold, the path is 'stale' and an alert is sent.\n"
+            "  * 'alert_cooldown_minutes' prevents repeated alerts for the same\n"
+            "    still-stale path.\n"
+            "  * Each task keeps its own log file ('log_file', rotated daily with\n"
+            "    a 30-day backlog) and its own state file ('state_file', which\n"
+            "    remembers activity between runs). Their folders are created if\n"
+            "    missing.\n"
+            "\n"
+            "USAGE:\n"
+            "  StaleWatch is meant to run repeatedly (e.g. every 10 minutes via\n"
+            "  Windows Task Scheduler / StaleWatch.bat). It runs once and exits;\n"
+            "  the schedule provides the repetition."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  python StaleWatch.py             Run one monitoring pass.\n"
+            "  python StaleWatch.py --selftest  Check email/Teams connectivity, then run.\n"
+        ),
     )
     parser.add_argument(
         "--selftest", action="store_true",
-        help="Run a connectivity self-test before monitoring.",
+        help="Verify that the configured email/Teams channels are reachable "
+             "before monitoring (posts a test message to Teams).",
     )
     return parser.parse_args(argv)
 
 
-def configure_logging(output_dir):
-    """Set up rotating file + console logging under the chosen output folder.
+def _ensure_parent_dir(path):
+    """Create the folder that will contain `path` if it does not exist yet."""
+    parent = os.path.dirname(os.path.abspath(path))
+    os.makedirs(parent, exist_ok=True)
 
-    Returns (state_path, log_path) for that folder. The folder is created if
-    it does not exist, since it must be present before logging starts.
+
+def build_task_logger(task):
+    """Return a logger that writes this task's messages to its own log file.
+
+    The log file is named by the task's 'log_file' field (which must end in
+    '.log'); its folder is created if missing. A TimedRotatingFileHandler rolls
+    the file over at midnight and keeps a 30-day backlog.
     """
-    os.makedirs(output_dir, exist_ok=True)
-    state_path = os.path.join(output_dir, "state.json")
-    log_path = os.path.join(output_dir, "StaleWatch.log")
+    log_file = task.get('log_file')
+    if not log_file:
+        raise ValueError(f"Task '{task['name']}' is missing the 'log_file' field.")
+    if os.path.splitext(log_file)[1].lower() != '.log':
+        raise ValueError(f"Task '{task['name']}' log_file must have a '.log' extension: {log_file}")
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            # יצירת קובץ חדש בכל חצות (midnight), שמירה של 30 ימים אחורה (backupCount)
-            TimedRotatingFileHandler(log_path, when="midnight", interval=1, backupCount=30, encoding='utf-8'),
-            logging.StreamHandler()
-        ]
-    )
-    return state_path, log_path
+    _ensure_parent_dir(log_file)
+
+    logger = logging.getLogger(f"StaleWatch.{task['name']}")
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()  # avoid duplicate handlers if this runs more than once
+    # יצירת קובץ חדש בכל חצות (midnight), שמירה של 30 ימים אחורה (backupCount)
+    handler = TimedRotatingFileHandler(log_file, when="midnight", interval=1, backupCount=30, encoding='utf-8')
+    handler.setFormatter(logging.Formatter(LOG_FORMAT))
+    logger.addHandler(handler)
+    return logger
+
+
+def task_state_path(task):
+    """Validate the task's 'state_file' field, create its folder, return the path.
+
+    The file must end in '.json'; its folder is created if missing.
+    """
+    state_file = task.get('state_file')
+    if not state_file:
+        raise ValueError(f"Task '{task['name']}' is missing the 'state_file' field.")
+    if os.path.splitext(state_file)[1].lower() != '.json':
+        raise ValueError(f"Task '{task['name']}' state_file must have a '.json' extension: {state_file}")
+
+    _ensure_parent_dir(state_file)
+    return state_file
 
 
 def load_config():
@@ -115,9 +167,16 @@ def send_email_alert(settings, task, recipients):
     msg['To'] = ", ".join(recipients)
     msg.set_content(f"Path '{task['path']}' is stale. Description: {task.get('description', 'N/A')}")
     
+    password = os.environ.get('EMAIL_PASSWORD')
+    if not password:
+        raise ValueError(
+            "EMAIL_PASSWORD is not set. Set it to a Google App Password "
+            "(not your normal Gmail password) so StaleWatch can send email alerts."
+        )
+
     with smtplib.SMTP(settings['server'], settings['port'], timeout=10) as server:
         if settings.get('use_tls', True): server.starttls()
-        server.login(settings['sender_email'], os.environ.get('EMAIL_PASSWORD'))
+        server.login(settings['sender_email'], password)
         server.send_message(msg)
 
 def send_teams_alert(webhook_url, task):
@@ -125,7 +184,7 @@ def send_teams_alert(webhook_url, task):
     payload = {"text": f"**Alert:** Task '{task['name']}' is stale.\n\nPath: `{task['path']}`"}
     requests.post(webhook_url, json=payload, timeout=10).raise_for_status()
 
-def process_task(task, state):
+def process_task(task, state, logger=logging):
     now = datetime.now()
 
 # 1. Get current status
@@ -133,7 +192,7 @@ def process_task(task, state):
         curr_mtime_ts, curr_size = get_file_status(task['path'], task['type'])
         curr_mtime = datetime.fromtimestamp(curr_mtime_ts)
     except Exception as e:
-        logging.error(f"Error accessing '{task['name']}': {e}")
+        logger.error(f"Error accessing '{task['name']}': {e}")
         return
 
 # 2. Check if file is actually "Stale"
@@ -149,7 +208,7 @@ def process_task(task, state):
 
     # If size changed OR mtime changed, the file is NOT stale - reset the activity tracker
     if curr_mtime_ts > task_state['last_mtime'] or curr_size != task_state['last_size']:
-        logging.info(f"Task '{task['name']}' activity detected (Size: {curr_size} bytes). Resetting timer.")
+        logger.info(f"Task '{task['name']}' activity detected (Size: {curr_size} bytes). Resetting timer.")
         task_state['last_mtime'] = curr_mtime_ts
         task_state['last_size'] = curr_size
         return
@@ -165,7 +224,7 @@ def process_task(task, state):
         return
 
     # 5. Trigger Alerts
-    logging.warning(f"Task '{task['name']}' is stale! Sending alerts...")
+    logger.warning(f"Task '{task['name']}' is stale! Sending alerts...")
     for notification in task['notifications']:
         try:
             if notification['type'] == 'email':
@@ -173,7 +232,7 @@ def process_task(task, state):
             elif notification['type'] == 'teams':
                 send_teams_alert(notification['webhook_url'], task)
         except Exception as e:
-            logging.error(f"Failed to alert for '{task['name']}': {e}")
+            logger.error(f"Failed to alert for '{task['name']}': {e}")
 
     task_state['last_alert_time'] = now.isoformat()
 
@@ -187,7 +246,7 @@ def run_selftest(config):
         test_teams_webhook(url)
 
 
-def load_state(path=os.path.join(DEFAULT_OUTPUT_DIR, "state.json")):
+def load_state(path):
     """Load persisted state, tolerating a missing or corrupted file."""
     if not os.path.exists(path):
         return {}
@@ -199,7 +258,7 @@ def load_state(path=os.path.join(DEFAULT_OUTPUT_DIR, "state.json")):
         return {}
 
 
-def save_state(state, path=os.path.join(DEFAULT_OUTPUT_DIR, "state.json")):
+def save_state(state, path):
     """Write state atomically so a crash mid-write can't corrupt the file."""
     tmp = path + '.tmp'
     with open(tmp, 'w') as f:
@@ -209,21 +268,27 @@ def save_state(state, path=os.path.join(DEFAULT_OUTPUT_DIR, "state.json")):
 
 def main(argv=None):
     args = parse_args(argv)
-    state_path, _ = configure_logging(args.output_folder)
+    # Console logging for general/system messages; each task also logs to its own file.
+    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 
     try:
-        logging.info(f"StaleWatch starting in environment '{args.environment}'.")
         config = load_config()
 
         if args.selftest:
             run_selftest(config)
 
-        state = load_state(state_path)
-
+        # Each task keeps its own log file and its own state file.
         for task in config.get('monitoring_tasks', []):
-            process_task(task, state)
+            try:
+                logger = build_task_logger(task)
+                state_path = task_state_path(task)
+            except (ValueError, KeyError) as e:
+                logging.error(f"Skipping task: {e}")
+                continue
 
-        save_state(state, state_path)
+            state = load_state(state_path)
+            process_task(task, state, logger)
+            save_state(state, state_path)
 
     except Exception as e:
         logging.critical(f"System failure: {e}")

@@ -3,7 +3,7 @@
 This guide provides step-by-step instructions for automating the **StaleWatch** monitoring tool using the Windows Task Scheduler.
 
 ## Prerequisites
-1. Ensure `StaleWatch.py`, `StaleWatch.bat`, and `StaleWatch.json` are in your project directory (e.g., `C:\Users\maxmo\Projects\StaleWatch`). (`output_files\state.json` and `output_files\StaleWatch.log` are created automatically.)
+1. Ensure `StaleWatch.py`, `StaleWatch.bat`, and `StaleWatch.json` are in your project directory (e.g., `C:\Users\maxmo\Projects\StaleWatch`). (Each task's log and state files, and their folders, are created automatically from the `log_file` / `state_file` fields in `StaleWatch.json`.)
 2. Verify that `python` is available on the system PATH (the batch file calls `python` directly).
 3. Ensure the `EMAIL_PASSWORD` environment variable is set in your system environment variables.
 
@@ -31,8 +31,8 @@ This guide provides step-by-step instructions for automating the **StaleWatch** 
 - Click **New...**.
 - **Action**: Start a program.
 - **Program/script**: Browse and select `C:\Users\maxmo\Projects\StaleWatch\StaleWatch.bat`.
-- **Add arguments**: The environment, and optionally an output folder: `PRD` (or e.g. `PRD "D:\StaleWatch\out"`).
-    - *Note: The batch file runs `StaleWatch.py` from its own folder, so no "Start in" is needed. The first argument (environment) is mandatory and must be one of `PRD PPR ITG QA1 QA2 QA3` (passed to Python as `-e`). The second argument (output folder for the log + state) is optional and passed as `-f`; it defaults to the `output_files` folder next to `StaleWatch.py`.*
+- **Add arguments**: None required. (Optionally `--selftest` to run a connectivity check before monitoring.)
+    - *Note: The batch file runs `StaleWatch.py` from its own folder, so no "Start in" is needed. Each task's log file and state file are configured per task in `StaleWatch.json` via the `log_file` and `state_file` fields.*
 
 ### 5. Settings Tab
 - **Stop the task if it runs longer than**: Set to `1 hour` to prevent zombie processes.
@@ -45,4 +45,4 @@ This guide provides step-by-step instructions for automating the **StaleWatch** 
 ## Verification
 1. Right-click the newly created task (`StaleWatch_Monitor`) in the Task Scheduler library.
 2. Click **Run**.
-3. Check the `output_files\StaleWatch.log` file in your project folder to confirm the script executed successfully without errors.
+3. Check each task's log file (the `log_file` path from `StaleWatch.json`) to confirm the script executed successfully without errors.

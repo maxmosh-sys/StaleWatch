@@ -14,12 +14,16 @@
       "type": "file",
       "log_file": "C:\\Users\\maxmo\\Projects\\StaleWatch\\output_files\\production_database_log.log",
       "state_file": "C:\\Users\\maxmo\\Projects\\StaleWatch\\output_files\\production_database_log_state.json",
-      "threshold_minutes": 2,
-      "alert_cooldown_minutes": 4,
+      "threshold_minutes": 1,
+      "alert_cooldown_minutes": 2,
       "notifications": [
         {
           "type": "email",
           "recipients": ["maxmosh@gmail.com"]
+        },
+        {
+          "type": "teams",
+          "webhook_url": "https://webhook.teams.office.com/webhookb2/..."
         }
       ]
     }
