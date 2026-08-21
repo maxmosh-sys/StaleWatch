@@ -11,7 +11,9 @@ if not exist "%SCRIPT_DIR%StaleWatch.py" (
     exit /b 1
 )
 
-set EMAIL_PASSWORD=REDACTED_APP_PASSWORD
+rem EMAIL_PASSWORD must already be set as a persistent environment variable
+rem (run once, from an elevated prompt: setx EMAIL_PASSWORD "your_app_password_here").
+rem Do not hardcode the password here - it would get committed to source control.
 echo Running StaleWatch monitor...
 python "%SCRIPT_DIR%StaleWatch.py" %*
 echo.
